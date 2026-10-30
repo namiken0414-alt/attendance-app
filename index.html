@@ -138,9 +138,18 @@
         let currentUser = null;
         let unsubscribe = null;
 
-        // Custom Document Room ID for Sharing
+        // ランダムなIDを自動生成する関数（他の先生と被らないようにする）
+        function generateRandomRoomId() {
+            return 'room-' + Math.random().toString(36).substring(2, 9);
+        }
+
+        // URLパラメータからの取得、または保存済みID/新規ランダムIDの自動設定
         const urlParams = new URLSearchParams(window.location.search);
-        let roomId = urlParams.get('room') || 'default-room';
+        let savedRoomId = localStorage.getItem('attendance_app_room_id');
+        let roomId = urlParams.get('room') || savedRoomId || generateRandomRoomId();
+        
+        // 端末のローカルストレージに自分専用IDとして保持
+        localStorage.setItem('attendance_app_room_id', roomId);
 
         window.initFirebase = async function() {
             if (!firebaseConfig) return false;
@@ -212,13 +221,14 @@
             document.execCommand('copy');
             document.body.removeChild(tempInput);
 
-            alert(`【現在の共有ID（合言葉）: ${roomId}】\n\n【他の端末で同期する方法】\n1. 他のスマホやPCで本アプリを開きます。\n2. ヘッダーの「共有ID変更」をタップします。\n3. 合言葉「${roomId}」を入力すると同じデータがリアルタイム同期されます。`);
+            alert(`【現在の共有ID（合言葉）: ${roomId}】\n\n【他の自分の端末で同期する方法】\n1. 他のスマホやPCで本アプリを開きます。\n2. ヘッダーの「共有ID変更」をタップします。\n3. 合言葉「${roomId}」を入力すると同じデータがリアルタイム同期されます。`);
         };
 
         window.changeRoomIdPrompt = function() {
-            const newRoom = prompt("共有する合言葉（共有ID）を入力してください:\n(※同じ共有IDを設定した端末同士でデータが自動同期されます)", roomId);
+            const newRoom = prompt("共有する合言葉（共有ID）を入力してください:\n(※同じ共有IDを設定した端末同士でのみデータが自動同期されます)", roomId);
             if (newRoom && newRoom.trim() !== '') {
                 roomId = newRoom.trim();
+                localStorage.setItem('attendance_app_room_id', roomId);
                 const currentUrl = new URL(window.location.href);
                 currentUrl.searchParams.set('room', roomId);
                 window.history.pushState({}, '', currentUrl);
